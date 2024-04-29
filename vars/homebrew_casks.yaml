@@ -1,0 +1,18 @@
+homebrew_casks:
+  - 1password
+  - dbeaver-community
+  - docker
+  - github
+  - google-chrome
+  - intellij-idea-ce
+  - iterm2
+  - lens
+  - logi-options-plus
+  - monitorcontrol
+  - postman
+  - pycharm-ce
+  - readdle-spark
+  - rustrover
+  - spotify
+  - tableau
+  - visual-studio-code
