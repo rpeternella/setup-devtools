@@ -1,0 +1,4 @@
+homebrew_taps:
+  - dbt-labs/dbt
+  - kreuzwerker/taps
+  - homebrew/bundle

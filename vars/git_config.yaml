@@ -1,0 +1,4 @@
+git_config:
+  - init.defaultBranch: master
+  - user.name: "User Name"
+  - user.email: "email@provider.com"

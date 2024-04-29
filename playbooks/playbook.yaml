@@ -1,0 +1,137 @@
+---
+- name: Setup development environment
+  hosts: localhost
+  gather_facts: false
+  # become: true
+
+  vars_files:
+    - ../vars/git_config.yaml
+    - ../vars/homebrew_casks.yaml
+    - ../vars/homebrew_formulas.yaml
+    - ../vars/homebrew_taps.yaml
+    - ../vars/oh_my_zsh_plugins.yaml
+    - ../vars/python_packages.yaml
+    - ../vars/vscode_extensions.yaml
+    - ../vars/zshrc.yaml
+    
+  vars:
+    username: your-username-here
+    python_version: 3.12.1
+    java_install_versions: 
+      - 11
+      - 17
+      - 21
+    java_default_version: 17
+
+  tasks:
+  - name: Install Homebrew
+    tags: homebrew
+    command: /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+  - name: Add Homebrew taps
+    tags: homebrew
+    homebrew_tap:
+      name: "{{ item }}"
+      state: present
+    with_items: "{{ homebrew_taps }}"
+  
+  - name: Install Homebrew formulas
+    tags: homebrew
+    homebrew:
+      name: "{{ item }}"
+      state: present
+    with_items: "{{ homebrew_formulas }}"
+
+  - name: Install Homebrew casks
+    tags: homebrew
+    homebrew_cask:
+      name: "{{ item }}"
+      state: present
+    with_items: "{{ homebrew_casks }}"
+
+  - name: Install Visual Studio Code extensions
+    tags: vscode
+    command:
+      cmd: code --install-extension "{{ item }}"
+    with_items: "{{ vscode_extensions }}"
+
+  - name: Install Java versions
+    tags: java
+    homebrew:
+      name: openjdk@{{ item }}
+      state: present
+    with_items: "{{ java_install_versions }}"
+
+  - name: Configure Pyenv with specified Python version
+    shell: pyenv install "{{ python_version }}" && pyenv global "{{ python_version }}"
+
+  - name: Install Python global packages
+    tags: python
+    pip:
+      name: "{{ item }}"
+      state: present
+    with_items: "{{ python_packages }}"
+
+  - name: Install Oh My Zsh
+    tags: zsh
+    shell: /bin/bash -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+    args:
+      creates: ~/.oh-my-zsh
+
+  - name: Clone Powerline fonts
+    tags: install-fonts
+    git:
+      repo: "https://github.com/powerline/fonts.git"
+      dest: "~/powerline-fonts"
+      force: yes
+
+  - name: Install Powerline fonts
+    tags: install-fonts
+    shell: /bin/bash install.sh
+    args:
+      chdir: "~/powerline-fonts"
+
+  - name: Remove fonts directory
+    tags: install-fonts
+    file:
+      path: "~/powerline-fonts"
+      state: absent
+
+  - name: Configure Visual Studio Code settings
+    tags: vscode-settings
+    template:
+      src: ../templates/vscode_settings.json.j2
+      dest: ~/Library/Application\ Support/Code/User/settings.json
+
+  - name: Configure iTerm2 settings
+    tags: iterm2
+    template:
+      src: ../templates/iterm2.plist.j2
+      dest: ~/Library/Preferences/com.googlecode.iterm2.plist
+
+  - name: Configure .zshrc
+    tags: zsh
+    template:
+      src: ../templates/zshrc.j2
+      dest: ~/.zshrc
+    vars:
+      zshrc_vars: "{{ lookup('file', 'vars/zshrc.yaml') }}"
+
+  - name: Set ZSH as default shell
+    tags: zsh
+    shell: chsh -s $(which zsh)
+
+  - name: add Java aliases to .zshrc
+    tags: java-aliases
+    lineinfile:
+      path: ~/.zshrc
+      line: 'alias java-{{ item }}="export JAVA_HOME=`/usr/libexec/java_home -v {{ item }}`; java -version"'
+      insertafter: EOF
+    with_items: "{{ java_install_versions }}"
+
+  - name: Configure Git
+    tags: git
+    git_config:
+      name: "{{ item.key }}"
+      value: "{{ item.value }}"
+    with_items: "{{ git_config }}"
