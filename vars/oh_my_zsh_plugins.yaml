@@ -1,0 +1,10 @@
+oh_my_zsh_plugins:
+  - fd
+  - git
+  - history
+  - kubectl
+  - kube-ps1
+  - zsh-autosuggestions
+  - zsh-completions
+  - zsh-syntax-highlighting
+  
